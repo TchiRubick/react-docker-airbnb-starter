@@ -8,6 +8,14 @@ React project starter template, based with Docker, material-ui and Docker.
 
 Project delivered with a `docker-compose.yml` file and a `Dockerfile`.
 
+### `docker-compose up -d`
+
+Run the docker environment
+
+### `docker exec -it app bash`
+
+Move into the react container
+
 ## Available Scripts
 
 In the project directory, you can run:
