@@ -4,61 +4,41 @@ import { getToken } from '../helpers/storage';
 
 const baseUrl = Config.baseApiUrl;
 
-export const requestBodyPrivate = (method, path, body) => {
-  const url = `${baseUrl}${path}}`;
-  const content = { method: method.toUpperCase(), body: JSON.stringify(body) };
-  const header = { Authorization: `Bearer ${getToken()}` };
-
-  return handleFetch(url, content, header);
-};
-
-export const requestBodyPublic = (method, path, body) => {
+export const bodyApiCall = (method, path, body) => {
   const url = `${baseUrl}${path}`;
   const content = { method: method.toUpperCase(), body: JSON.stringify(body) };
-  const header = {};
 
-  return handleFetch(url, content, header);
+  return handleFetch(url, content);
 };
 
-export const requestQueryPublic = (method, path, queries) => {
+export const queryApiCall = (method, path, queries) => {
   let queryString = '';
+
   if (queries) {
     queryString = `?${Object.keys(queries).map((key) => `${key}=${queries[key]}`).join('&')}`;
   }
 
-  const url = `${baseUrl}${path}}${queryString}`;
+  const url = `${baseUrl}${path}${queryString}`;
   const content = { method: method.toUpperCase() };
-  const header = {};
 
-  return handleFetch(url, content, header);
+  return handleFetch(url, content);
 };
 
-export const requestQueryPrivate = (method, path, queries) => {
-  let queryString = '';
-  if (queries) {
-    queryString = `?${Object.keys(queries).map((key) => `${key}=${queries[key]}`).join('&')}`;
-  }
-
-  const url = `${baseUrl}${path}}${queryString}`;
-  const content = { method: method.toUpperCase() };
-  const header = { Authorization: `Bearer ${getToken()}` };
-
-  return handleFetch(url, content, header);
-};
-
-const handleFetch = (url, content = {}, header = {}) => {
+const handleFetch = async (url, content = {}) => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
     mode: '*cors',
-  },
+    Authorization: `Bearer ${getToken()}`,
+  };
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...content,
-    headers : { ...headers, ...header},
-  }).then((res) => handleResponse(res));
-};
+    headers,
+  });
 
+  return handleResponse(response);
+};
 
 const handleResponse = (res) => res.json().then((json) => {
   if ((res.status >= 200 && res.status < 400)) {
@@ -67,13 +47,15 @@ const handleResponse = (res) => res.json().then((json) => {
 
   const error = new Error(json);
   error.status = res.status;
-  error.message = json.error || res.statusText || 'UNKNOWN';
+  error.message = json.error || json.message || res.statusText || 'UNKNOWN';
 
   throw error;
 }).catch((err) => {
-  if (err.status === 498) {
-    return window.location.replace('/');
+  if (err.status) {
+    return err;
   }
 
-  return err;
+  const error = new Error(res.statusText);
+  error.status = res.status;
+  return error;
 });
